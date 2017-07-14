@@ -1,0 +1,11 @@
+#password {
+    margin-top: 2em;
+}
+.form-group {
+    padding:0.5em;
+    border-bottom: 1px dotted #ccc;
+}
+.form-group label {
+    width:20%;
+    display: inline-block;
+}
