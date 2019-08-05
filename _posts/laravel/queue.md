@@ -10,13 +10,12 @@ title: 队列部分源码阅读
     - Sync：同步队列，生产者产生的任务直接执行
     - Database：数据库队列驱动，生产者产生的任务放入数据库
     - Redis：Redis队列驱动，生产者产生的任务放入Redis
-    - Beanstalkd
-    - Sqs
- - registerConnection() 注册队列连接获取必报，当需要用到队列驱动连接时，实例化连接
+    - Beanstalkd：略过
+    - Sqs：略过
+ - registerConnection() 注册队列连接获取闭包，当需要用到队列驱动连接时，实例化连接
  - registerWorker() 注册队列消费者
- - registerListener() 
- - registerFailedJobServices() 注册失败任务服务，如果没有配置失败任务数据表，表示忽略失败的任务
- 注册完毕的服务对应如下别名：
+ - registerListener() Listen模式注册队列消费者
+ - registerFailedJobServices() 注册失败任务服务
 
 |注册方法|对象|别名|
 |----|----|---|
@@ -223,11 +222,10 @@ protected function getNextJob($connection, $queue)
 如果队列驱动使用的时Database，那么$connection指的就是Illuminate\Queue\DatabaseQueue的实例，如果队列驱动使用的时Redis，那么$connection指的就是Illuminate\Queue\RedisQueue的实例，不同实例取出的任务对象类型也不一样。
 
 # 事件机制
-## 事件监听器
-事件监听器的原理是，通过Illuminate\Events\CallQueuedListener 来作为任务，将这个对象放入队列，然后在这个特殊的任务上，绑定对事件的监听，消费者执行这个任务时，转发到事件监听器上去执行。
+在充分理解任务机制的前提下，事件机制就很好理解了。事件监听器的原理是，通过Illuminate\Events\CallQueuedListener 来作为一个特殊的“任务”，将事件绑定与监听信息保存到这个“任务”中，当事件被触发时，通过事件解析出与之对应的“任务”，然后对这个“任务”进行派发，执行这个“任务”时，再去执行事件监听器。所以，这个环节的重点其实是，事件、监听器、CallQueuedListener三者之间是如何进行关联的，也就是事件监听机制，这里不做展开。
 
 ```php
-// 1. 派发一个事件
+// 1. 触发一个事件
 event(new Event);
 
 // 2. 从触发事件到进入队列的过程形容如下
@@ -236,9 +234,12 @@ $evnetJob = new \Illuminate\Events\CallQueuedListener(new Event);
 new PendingDispatch($evnetJob);
 ```
 
+# 消息机制 Notification
+消息机制的实现与事件机制类似。通过Illuminate\Notifications\SendQueuedNotifications 来作为一个特殊的“任务”，与消息相关信息进行关联，通过SendQueuedNotifications对象来完成入队与出队相关过程，然后在执行“任务”SendQueuedNotifications的时候解析出关联的notifiables和notification，然后据此执行消息相关逻辑。
+
+
 # 手动入队
-## 通过Queue Facade来指派任务
-任务系统与事件监听，都是系统提供的两种任务与队列机制，除此之外，你还可以手动推送任务到队列。
+任务系统与事件监听，都是系统提供的两种任务与队列机制，除此之外，你还可以手动推送任务到队列，即通过Queue Facade来指派任务。
 ```php
 // MyTask
 class MyTask implements ShouldQueue
@@ -254,9 +255,30 @@ class MyTask implements ShouldQueue
 
 // 推送至队列
 Queue::push('MyTask@handle', $args, $queueName);
+
+// MyAnotherTask
+class MyAnotherTask implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public function handle($args)
+    {
+        echo "MyTask";
+        return true;
+    }
+}
+
+// 推送至队列
+Queue::push(new MyAnotherTask, $args, $queueName);
 ```
 
-通过上述方式，也可以将任务推送到队列中执行，但通过这种方式使用队列并没有结束，如果仅仅通过上述代码来执行的话，这个任务可能会一直执行下去，原因是缺少对执行任务后的处理：如果任务执行成功，因该从队列中删除掉；如果执行失败，也要有对应的处理措施。我们不妨来看看系统原有的机制，是如何来处理这个问题的。
+push的第一个参数如果是一个对象，则需要有一个handle方法作为执行方法；如果是一个字符串，则要以`class@method`的方式，指定对象要执行的方法；在5.3及以后的版本中，不可以用匿名函数作为参数。
+
+以对象的形式push进队列和以字符串的形式push进队列，handle方法所需的参数是不一样的：通过对象的方式push时，createPayload的过程中会利用CallQueuedHandler进行包装，后面执行时借用CallQueuedHandler的call方法执行，这时对象的handle方法不需要$job参数。
+
+通过字符串的方式，将任务推送到队列中，后面会直接执行对象的指定方法，但并没有结束，如果仅仅通过上述代码来执行的话，这个任务可能会一直执行下去，原因是缺少对执行任务后的处理：如果任务执行成功，因该从队列中删除掉；如果执行失败，也要有对应的处理措施。
+
+我们不妨来看看通过CallQueuedHandler的机制，是如何来处理这个问题的。
 
 无论是系统的任务机制，或是事件机制，消费端从队列中取出任务信息后，还原出一个Job对象（RedisJob/DatabaseJob），然后执行这个Job的fire方法时，都会借助CallQueuedHandler这个对象来执行任务的具体内容：
 ```php
@@ -291,7 +313,8 @@ public function fire()
     // 所以这里$class = Illuminate\Queue\CallQueuedHandler, $method = call
     list($class, $method) = JobName::parse($payload['job']);
 
-    // 调用CallQueuedHandler的call方法
+    // 如果payload是通过CallQueuedHandler进行包装的，那么此时instance就是CallQueuedHandler的实例，method就是call方法
+    // 如果payload是通过字符串进行包装的，那么此时的instance就是制定的任务对象，method就是制定的调用方法
     ($this->instance = $this->resolve($class))->{$method}($this, $payload['data']);
 }
 
@@ -325,8 +348,239 @@ public function call(Job $job, array $data)
 }
 ```
 
-也就是说，如果手动派发任务到队列，需要自己手动进行像CallQueuedHandler::call()方法中那样的收尾工作，主要是清除执行成功的任务，在队列中的信息，避免任务被重新执行。
+也就是说，如果通过字符串的方式，手动派发任务到队列，需要自己手动进行像CallQueuedHandler::call()方法中那样的收尾工作，使任务执行完毕后，清除任务存储在队列中的信息，避免任务被重新执行。这个时候，就需要将任务信息传递到被执行方法中，也就是$job参数。
 
-# 其他
-其他几个值得思考的问题：
-在任务机制中，一个任务类定义的时候，需要使用SerializesModels，但在事件机制中，CallQueuedListener仅仅使用了InteractsWithQueue，那么SerializesModels应该在什么时候使用。
+# Job的存储
+当任务被添加到队列，又从队列中取出时，为了保证数据的正常，会用到一些技巧。常用的数据存储驱动是Database与Redis，两者的处理上有所不同，我们逐一来讲。
+
+## Redis
+假设我们现在设置有一个名叫queue的队列，那么，在队列执行的过程中，会有下列几个key被redis用到：
+
+- queue 任务信息默认存储的key
+- queue:reserved 任务执行过程中，临时存储的key
+- queue:delayed 任务执行失败，被重新发布到的key，或者延迟执行的任务被发布到的key
+
+### 入队
+任务信息被推入队列时，调用RedisQueue的push方法，将任务信息的载体payload，rpush到键名为queue的lists中：
+
+```php
+    /**
+     * Push a new job onto the queue.
+     *
+     * @param  object|string  $job
+     * @param  mixed   $data
+     * @param  string  $queue
+     * @return mixed
+     */
+    public function push($job, $data = '', $queue = null)
+    {
+        return $this->pushRaw($this->createPayload($job, $data), $queue);
+    }
+
+    /**
+     * Push a raw payload onto the queue.
+     *
+     * @param  string  $payload
+     * @param  string  $queue
+     * @param  array   $options
+     * @return mixed
+     */
+    public function pushRaw($payload, $queue = null, array $options = [])
+    {
+        $this->getConnection()->rpush($this->getQueue($queue), $payload);
+
+        return json_decode($payload, true)['id'] ?? null;
+    }
+```
+
+如果是将一个任务推入队列中延迟执行，调用的是RedisQueue的later方法，zadd到键名为queue:delayed的zset中，延迟时长作为排序的依据：
+
+```php
+
+    /**
+     * Push a new job onto the queue after a delay.
+     *
+     * @param  \DateTimeInterface|\DateInterval|int  $delay
+     * @param  object|string  $job
+     * @param  mixed   $data
+     * @param  string  $queue
+     * @return mixed
+     */
+    public function later($delay, $job, $data = '', $queue = null)
+    {
+        return $this->laterRaw($delay, $this->createPayload($job, $data), $queue);
+    }
+
+    /**
+     * Push a raw job onto the queue after a delay.
+     *
+     * @param  \DateTimeInterface|\DateInterval|int  $delay
+     * @param  string  $payload
+     * @param  string  $queue
+     * @return mixed
+     */
+    protected function laterRaw($delay, $payload, $queue = null)
+    {
+        $this->getConnection()->zadd(
+            $this->getQueue($queue).':delayed', $this->availableAt($delay), $payload
+        );
+
+        return json_decode($payload, true)['id'] ?? null;
+    }
+```
+
+### 出队
+出队的方法只有一个，就是RedisQueue的pop方法。
+
+```php
+    /**
+     * Pop the next job off of the queue.
+     *
+     * @param  string  $queue
+     * @return \Illuminate\Contracts\Queue\Job|null
+     */
+    public function pop($queue = null)
+    {
+        $this->migrate($prefixed = $this->getQueue($queue));
+
+        list($job, $reserved) = $this->retrieveNextJob($prefixed);
+
+        if ($reserved) {
+            return new RedisJob(
+                $this->container, $this, $job,
+                $reserved, $this->connectionName, $queue ?: $this->default
+            );
+        }
+    }
+
+    /**
+     * Migrate any delayed or expired jobs onto the primary queue.
+     *
+     * @param  string  $queue
+     * @return void
+     */
+    protected function migrate($queue)
+    {
+        $this->migrateExpiredJobs($queue.':delayed', $queue);
+
+        if (! is_null($this->retryAfter)) {
+            $this->migrateExpiredJobs($queue.':reserved', $queue);
+        }
+    }
+
+    /**
+     * Migrate the delayed jobs that are ready to the regular queue.
+     *
+     * @param  string  $from
+     * @param  string  $to
+     * @return array
+     */
+    public function migrateExpiredJobs($from, $to)
+    {
+        return $this->getConnection()->eval(
+            LuaScripts::migrateExpiredJobs(), 2, $from, $to, $this->currentTime()
+        );
+    }
+```
+
+在出队之前，先检查queue:delayed上是否有到期的任务，有的话，先将这部分任务的信息转移到queue上，如果设置有超时时间，还会检查queue:reserved上是否有到期的任务，将这部分的任务信息也转移到queue上。
+
+接着通过retrieveNextJob方法获取下一个要执行的任务信息：从queue中取出第一个任务，将他的attempt值加一后放入到queue:reserved中。
+
+```php
+    /**
+     * Retrieve the next job from the queue.
+     *
+     * @param  string  $queue
+     * @return array
+     */
+    protected function retrieveNextJob($queue)
+    {
+        return $this->getConnection()->eval(
+            LuaScripts::pop(), 2, $queue, $queue.':reserved',
+            $this->availableAt($this->retryAfter)
+        );
+    }
+
+
+// LuaScripts::pop
+    /**
+     * Get the Lua script for popping the next job off of the queue.
+     *
+     * KEYS[1] - The queue to pop jobs from, for example: queues:foo
+     * KEYS[2] - The queue to place reserved jobs on, for example: queues:foo:reserved
+     * ARGV[1] - The time at which the reserved job will expire
+     *
+     * @return string
+     */
+    public static function pop()
+    {
+        return <<<'LUA'
+-- Pop the first job off of the queue...
+local job = redis.call('lpop', KEYS[1])
+local reserved = false
+
+if(job ~= false) then
+    -- Increment the attempt count and place job on the reserved queue...
+    reserved = cjson.decode(job)
+    reserved['attempts'] = reserved['attempts'] + 1
+    reserved = cjson.encode(reserved)
+    redis.call('zadd', KEYS[2], ARGV[1], reserved)
+end
+
+return {job, reserved}
+LUA;
+    }
+```
+
+在任务执行成功时，检查任务是否被删除或Release，如果没有的话，就从queue:reserved中删除任务信息；如果执行失败的话，检查是否超过最大执行次数，超过则删除任务信息，否则标记为已删除，从queue:reserved中删除任务信息，并重新发布任务到queue:delayed中。
+
+```php
+
+    /**
+     * Delete a reserved job from the reserved queue and release it.
+     *
+     * @param  string  $queue
+     * @param  \Illuminate\Queue\Jobs\RedisJob  $job
+     * @param  int  $delay
+     * @return void
+     */
+    public function deleteAndRelease($queue, $job, $delay)
+    {
+        $queue = $this->getQueue($queue);
+
+        $this->getConnection()->eval(
+            LuaScripts::release(), 2, $queue.':delayed', $queue.':reserved',
+            $job->getReservedJob(), $this->availableAt($delay)
+        );
+    }
+
+
+// LuaScripts::release()
+    /**
+     * Get the Lua script for releasing reserved jobs.
+     *
+     * KEYS[1] - The "delayed" queue we release jobs onto, for example: queues:foo:delayed
+     * KEYS[2] - The queue the jobs are currently on, for example: queues:foo:reserved
+     * ARGV[1] - The raw payload of the job to add to the "delayed" queue
+     * ARGV[2] - The UNIX timestamp at which the job should become available
+     *
+     * @return string
+     */
+    public static function release()
+    {
+        return <<<'LUA'
+-- Remove the job from the current queue...
+redis.call('zrem', KEYS[2], ARGV[1])
+
+-- Add the job onto the "delayed" queue...
+redis.call('zadd', KEYS[1], ARGV[2], ARGV[1])
+
+return true
+LUA;
+    }
+```
+
+## Database
+
+如果队列驱动是数据库，那么这个过程就相对简单一些，只需要用一张数据表来保存任务信息，在取出任务及任务失败等复杂情况下，通过事务来保证任务执行的结果与数据的一致性。
