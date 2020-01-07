@@ -1,0 +1,15 @@
+# 本地环境队列运行容器+crontab
+FROM harbor.uuzu.com/information/php:7.2-fpm-alpine
+
+RUN apk update && apk add libreoffice
+
+RUN echo "* * * * * php /app/RefactoringArtCooperation/artisan schedule:run >> /dev/null 2>&1" >> /etc/crontabs/root \
+    && crond 
+
+RUN apk add supervisor\
+    && rm /var/cache/apk/* \
+    && sed -i 's/^\(\[supervisord\]\)$/\1\nnodaemon=true/' /etc/supervisord.conf
+
+CMD ["supervisord", "-c", "/etc/supervisord.conf"]
+
+COPY font/* /usr/share/fonts/

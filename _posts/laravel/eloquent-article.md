@@ -1,3 +1,4 @@
+# laravel ORM源码分析
 
 在web应用中，与数据库的交互可以说是最常用且最重要的操作。作为当前最流行的php框架之一，laravel对数据库操作的封装，可以说是非常优秀了。在官方文档当中，数据库的使用说明文档占据了两个大章节，分别是【数据库】与【Eloquent ORM】，为什么针对同一功能，官方要出两个文档呢？是因为它重要？复杂？对此我无从猜测，不过可以从源码中窥知一二。
 
@@ -189,7 +190,8 @@ Builder有三个成员对象:
  - Grammar
  - Processor
 
-** ConnectionInterface **
+**ConnectionInterface**
+
 ConnectionInterface对象是执行SQL语句、对读写分离连接进行管理的对象，也就是数据库连接对象。是最初级的、能与数据交互的对象：
 ```
 DB::select('select * from users where active = ?', [1]);
@@ -224,11 +226,11 @@ public static function resolveConnection($connection = null)
 }
 ```
 
-** Grammar **
+**Grammar**
 
 Grammar对象是SQL语法解析对象，我们在Builder对象中调用的方法，会以Builder属性的形式将调用参数管理起来，然后在调用SQL执行方法时，先通过Grammar对象对这些数据进行解析，解析出将要执行的SQL语句，然后交给ConnectionInterface执行，获取到数据。
 
-** Processor **
+**Processor**
 
 Processor对象的作用比较简单，将查询结果数据返回给Builder，包括查询的行数据，插入后的自增ID值。
 

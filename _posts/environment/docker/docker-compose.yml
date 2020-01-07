@@ -1,0 +1,62 @@
+version: '3'
+services:
+
+  redis:
+    image: harbor.uuzu.com/information/redis:4.0-alpine
+    networks:
+      - localhost
+    ports:
+      - "6379:6379"
+    volumes:
+      - D:\song\docker\localhost\data\redis:/data
+
+  mysql:
+    image: harbor.uuzu.com/information/mysql:5.7
+    command: mysqld --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - localhost
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    volumes:
+      - D:\song\docker\localhost\data\mysql:/var/lib/mysql
+
+  php:
+    #image: harbor.uuzu.com/information/php:7.2-fpm-alpine
+    #image: php:localhost
+    build:
+      context: .
+      dockerfile: Dockerfile.php
+    volumes:
+      - D:\song\www:/app
+    networks:
+      - localhost
+
+  queue:
+    build:
+      context: .
+      dockerfile: Dockerfile.queue
+    volumes:
+      - D:\song\www:/app
+      - D:\song\docker\localhost\supervisor:/etc/supervisor.d/
+    networks:
+      - localhost
+
+  web:
+    image: harbor.uuzu.com/information/nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - D:\song\www:/app
+      - D:\song\docker\localhost\vhost:/etc/nginx/conf.d
+    networks:
+      - localhost
+    depends_on:
+      - php
+
+networks:
+  localhost:
+    driver: bridge
