@@ -1,4 +1,7 @@
-# laravel 队列部分源码阅读
+---
+title: laravel 队列部分源码阅读
+date: 2019-08-01 09:30
+---
 
 # 一、 依赖的服务
 ## Illuminate\Queue\QueueServiceProvider

@@ -1,4 +1,7 @@
-# Laravel Pipeline源码分析
+---
+title: Laravel Pipeline源码分析
+date:  2020-01-03 15:38
+---
 
 # Index
  - [Pipeline的使用](#Pipeline的使用)

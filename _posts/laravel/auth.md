@@ -1,4 +1,7 @@
-# laravel Auth源码分析
+---
+title: laravel Auth源码分析
+date: 2019-07-01 09:30
+---
 
 ## Index
  - [Auth模块](#Auth模块)

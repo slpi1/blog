@@ -1,4 +1,7 @@
-# word操作与pdf转码
+---
+title: word操作与pdf转码
+date: 2019-11-08 16:57
+---
 
 # Index
  - [word文档中动态插入内容](#word文档中动态插入内容)

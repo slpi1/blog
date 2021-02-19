@@ -1,4 +1,7 @@
-# laravel框架对__call魔术方法的使用
+---
+title: laravel框架对__call魔术方法的使用
+date: 2019-12-04 16:10
+---
 
 # Index
  - [Macroable](#Macroable)
