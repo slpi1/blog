@@ -1,6 +1,8 @@
 ---
 title: PHP代码规范
 date: 2019-10-16 19:19
+categories:
+- PHP
 ---
 
 ## 1. 文件夹

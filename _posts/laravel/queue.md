@@ -1,6 +1,10 @@
 ---
 title: laravel 队列部分源码阅读
 date: 2019-08-01 09:30
+tag: laravel
+categories:
+- PHP
+- Laravel
 ---
 
 # 一、 依赖的服务

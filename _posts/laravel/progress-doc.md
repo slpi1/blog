@@ -1,6 +1,10 @@
 ---
 title: laravel应用执行流程
 date: 2019-05-06 11:26
+tag: laravel
+categories:
+- PHP
+- Laravel
 ---
 
 # Index

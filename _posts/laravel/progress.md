@@ -2,6 +2,9 @@
 title: laravel 主流程
 date: 2019-05-06 11:26
 tag: laravel
+categories:
+- PHP
+- Laravel
 ---
 
 ```flow

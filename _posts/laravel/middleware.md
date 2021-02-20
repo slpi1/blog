@@ -1,6 +1,10 @@
 ---
 title: Laravel 中间件
 date: 2019-12-24 11:25
+tag: laravel
+categories:
+- PHP
+- Laravel
 ---
 
 # Index

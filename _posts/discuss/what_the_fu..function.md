@@ -1,6 +1,8 @@
 ---
 title: PHP坑爹函数系列
 date: 2019-10-16 20:07
+categories:
+- PHP
 ---
 
 # Index

@@ -1,6 +1,10 @@
 ---
 title: 文件系统
 date: 2019-12-12 15:56
+tag: laravel
+categories:
+- PHP
+- Laravel
 ---
 
 通过阅读 `laravel` 的 `Filesystem` 部分的代码可知，框架提供两套文件系统的操作接口：
