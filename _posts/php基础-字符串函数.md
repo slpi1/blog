@@ -3,7 +3,7 @@ title: php基础 - 常用字符串函数
 date: 2015-09-24 12:30
 description: php基础，常用字符串函数
 keywords: php基础 - 字符串函数
-categories:
+tags:
 - PHP
 ---
 

@@ -1,8 +1,7 @@
 ---
 title: 邮件发送过滤
 date: 2019-12-05 09:49
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

@@ -1,7 +1,7 @@
 ---
 title: 可配置化
 date: 2019-10-25 16:41
-categories:
+tags:
 - PHP
 ---
 

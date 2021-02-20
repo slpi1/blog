@@ -3,7 +3,7 @@ title: php基础 - 时间与日期
 date: 2015-09-24 12:30
 description: php基础，时间与日期，常用时间日期函数以及时间日期对象。
 keywords: php基础 - 时间与日期
-categories:
+tags:
 - PHP
 ---
 

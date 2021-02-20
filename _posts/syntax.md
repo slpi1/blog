@@ -2,7 +2,7 @@
 title: Markdown 语法说明
 date: 2015-09-03 9:50
 description: markdown 语法说明
-categories:
+tags:
 - Markdown
 ---
 << [访问 Wow!Ubuntu](http://wowubuntu.com)

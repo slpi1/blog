@@ -3,7 +3,7 @@ title: php基础 - 文档操作
 date: 2015-09-24 14:30
 description: php对文档及目录的操作。
 keywords: php基础 - 文档操作
-categories:
+tags:
 - PHP
 ---
 

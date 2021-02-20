@@ -1,6 +1,8 @@
 ---
 title: php实现variable-precision SWAR算法
 date: 2021-02-19 10:21
+tags:
+- PHP
 ---
 
 在看 <<redis的设计与实现>> 时遇到一个问题，如何统计一个二进制串中 `1` 出现的次数。 书上一个介绍了三种方法：循环检查，查表统计以及 `swar` 算法。

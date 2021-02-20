@@ -1,8 +1,7 @@
 ---
 title: laravel ORM源码分析
 date: 2019-08-02 12:50
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

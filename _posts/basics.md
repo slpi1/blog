@@ -2,7 +2,7 @@
 title: Markdown 快速入门
 date: 2015-09-03 9:50
 description: markdown 快速入门
-categories:
+tags:
 - Markdown
 ---
 

@@ -1,8 +1,7 @@
 ---
 title: 文件系统
 date: 2019-12-12 15:56
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

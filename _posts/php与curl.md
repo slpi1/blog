@@ -3,7 +3,7 @@ title: php的curl使用
 date: 2015-10-5 10:36
 description: php，curl
 keywords: php，curl
-categories:
+tags:
 - PHP
 ---
 

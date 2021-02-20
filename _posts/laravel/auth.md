@@ -1,8 +1,7 @@
 ---
 title: laravel Auth源码分析
 date: 2019-07-01 09:30
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

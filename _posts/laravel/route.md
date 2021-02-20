@@ -1,8 +1,7 @@
 ---
 title: laravel 路由模块源码分析
 date: 2020-01-09 16:10
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

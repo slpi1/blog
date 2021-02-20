@@ -1,8 +1,7 @@
 ---
 title: Laravel Pipeline源码分析
 date:  2020-01-03 15:38
-tag: laravel
-categories:
+tags:
 - PHP
 - Laravel
 ---

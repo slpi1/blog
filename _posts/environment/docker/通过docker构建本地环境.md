@@ -1,7 +1,7 @@
 ---
 title: 通过docker构建本地环境
 date: 2019-11-20 15:01
-categories:
+tags:
 - docker
 ---
 

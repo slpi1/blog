@@ -2,7 +2,7 @@
 title: php 中的引用计数、写时复制、写时改变
 date: 2016-05-19 10:21
 keywords: php基础
-categories:
+tags:
 - PHP
 ---
 

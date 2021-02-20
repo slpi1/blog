@@ -3,7 +3,7 @@ title: 用户相关接口
 date: 2016-08-19 15:10
 description: sealtalk用户相关接口文档
 keywords: sealtalk用户相关接口文档
-categories:
+tags:
 - rongcloud
 - PHP
 ---

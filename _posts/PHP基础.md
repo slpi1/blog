@@ -3,7 +3,7 @@ title: php基础
 date: 2015-09-23 14:50
 description: php基础知识点。数据类型及转换、数组及相关函数、OOP及高级特性。
 keywords: php基础
-categories:
+tags:
 - PHP
 ---
 
